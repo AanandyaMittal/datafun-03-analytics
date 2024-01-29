@@ -1,0 +1,7 @@
+Units Sold Statistics:
+Mean: 1608.2685714285715
+Median: 1542.5
+Mode: 0    727
+Name: Units Sold, dtype: int32
+Min: 200
+Max: 4492
