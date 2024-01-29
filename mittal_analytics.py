@@ -4,23 +4,27 @@ from io import StringIO
 from pathlib import Path
 import io
 import requests
+import urllib3
 import pandas as pd
+import json
 
 import mittal_projsetup
 import mittal_utils
+
+requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS='ALL:@SECLEVEL=1'
 
 def main():
     ''' Main function to demonstrate module capabilities. '''
 
     print(f"Name: {mittal_utils.company_name}")
 
-    txt_url = 'https://shakespeare.mit.edu/romeo_juliet/full.html'
+    txt_url = 'https://example-files.online-convert.com/document/txt/example.txt'
 
-    csv_url = 'https://raw.githubusercontent.com/MainakRepositor/Datasets/master/World%20Happiness%20Data/2020.csv' 
+    csv_url = 'https://people.sc.fsu.edu/~jburkardt/data/csv/hw_200.csv' 
 
-    excel_url = 'https://github.com/bharathirajatut/sample-excel-dataset/raw/master/cattle.xls' 
+    excel_url = 'https://go.microsoft.com/fwlink/?LinkID=521962' 
     
-    json_url = 'https://github.com/domoritz/maps/blob/master/data/iris.json'
+    json_url = 'https://raw.githubusercontent.com/domoritz/maps/master/data/iris.json'
 
     txt_folder_name = 'data-txt'
     csv_folder_name = 'data-csv'
@@ -37,10 +41,10 @@ def main():
     fetch_and_write_excel_data(excel_folder_name, excel_filename,excel_url)
     fetch_and_write_json_data(json_folder_name, json_filename,json_url)
 
-    prs_txt_file(txt_folder_name,'data.txt', 'results_txt.txt')
-    prs_csv_file(csv_folder_name,'data.csv', 'results_csv.txt')
-    prs_excel_file(excel_folder_name,'data.xls', 'results_xls.txt')
-    prs_json_file(json_folder_name,'data.json', 'results_json.txt')
+    prs_txt_data(txt_folder_name,'data.txt', 'results_txt.txt')
+    prs_csv_data(csv_folder_name,'data.csv', 'results_csv.txt')
+    prs_excel_data(excel_folder_name,'data.xls', 'results_xls.txt')
+    prs_json_data(json_folder_name,'data.json', 'results_json.txt')
 
 
 def write_txt_file(folder_name, filename, data):
@@ -103,7 +107,8 @@ def prs_txt_data(folder_name, filename, results):
     words = text_data.split()
     set_words = [word.lower() for word in words]  # Converting all words to lowercase
 
-    word_stats = f"Word count: {len(words)}\n"  # Total word count
+    word_stats = f"Word Statistics: \n"  # Total word count
+    word_stats += f"Word count: {len(words)}\n"  # Total word count
     word_stats += f"Unique word count: {len(set(set_words))}\n"  # Unique word count using a set for calculation
 
     # Counting frequency of each word in the list
@@ -121,12 +126,12 @@ def prs_txt_data(folder_name, filename, results):
 def prs_excel_data(folder_name, filename, results):
     # read file
     excel_data_df = pd.read_excel(Path(folder_name).joinpath(filename))
-    excel_data_df = excel_data_df.astype(int)
 
-    column = excel_data_df.iloc[:, 0]
+    column = excel_data_df['Units Sold'].astype(int)
 
     # writeable version of file
     w_excel_data = open(Path(folder_name).joinpath(results), 'w')
+    w_excel_data.write('Units Sold Statistics:\n')
     w_excel_data.write(
             f'Mean: {column.mean()}\n'
             f'Median: {column.median()}\n'
@@ -141,24 +146,26 @@ def prs_excel_data(folder_name, filename, results):
 def prs_csv_data(folder_name, filename, results):
     # read file
     csv_data = csv.reader((open(Path(folder_name).joinpath(filename), 'r')), delimiter= ',')
-    column_sums = ()
-    headers = []
+    column_sums = None
     is_first_row = True  # Flag for the first row (headers)
 
     for row in csv_data:
         if is_first_row:
-            # Store headers and initialize column sums
-            headers = row
-            column_sums = (0,) * len(row)
+            # Skip the first row (headers) and initialize column sums
+            column_sums = (0,) * (len(row) - 1)  # Exclude the "Index" column
             is_first_row = False
             continue
 
-        # Add each item in the row to the corresponding column sum
-        column_sums = tuple(sum_value + int(item) for sum_value, item in zip(column_sums, row))
+        # Exclude the "Index" column and sum the rest
+        # Convert height and weight to integers
+        height = int(float(row[1]))
+        weight = int(float(row[2]))
+        column_sums = tuple(sum_value + value for sum_value, value in zip(column_sums, [height, weight]))
 
     # writeable version of file
     w_csv_data = open(Path(folder_name).joinpath(results), 'w')
-    for header, sum_value in zip(headers, column_sums):
+    w_csv_data.write('People Statistics: \n')
+    for header, sum_value in zip(["Height(Inches)", "Weight(Pounds)"], column_sums):
         w_csv_data.write(f'Sum of {header}: {sum_value}\n')
 
     w_csv_data.close()
@@ -184,6 +191,7 @@ def prs_json_data(folder_name, filename, results):
 
         # writeable version of file
         w_json_data = open(Path(folder_name).joinpath(results), 'w')
+        w_json_data.write('Sepal Statistics: \n')
         w_json_data.write(sepal_info)
 
         w_json_data.close()
