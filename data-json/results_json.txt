@@ -1,0 +1,4 @@
+Sepal Statistics: 
+Total Sepal Count: 150
+Average Sepal Length: 5.843333333333334
+Average Sepal Width: 3.0573333333333337
